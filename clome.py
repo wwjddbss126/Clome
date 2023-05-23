@@ -114,7 +114,7 @@ def login_mybox(data_list):
             page.reload()            
             time.sleep(2)
             
-            element1 = page.query_selector('#account > div > a')
+            # element1 = page.query_selector('#account > div > a')
             element2 = page.query_selector('#account > div.MyView-module__my_info___GNmHz > div > button')
             
             if element2:                     
@@ -139,8 +139,7 @@ def login_mybox(data_list):
 
                     elif api in ["n", "N"]:
                         log_info("You can navigate Naver MYBOX Storage Freely!")                        
-                        break
-                        
+                                                
                     else:
                         log_info("Enter y or n !!")                    
                                            
@@ -205,8 +204,7 @@ def login_mega(data_list):
 
                     elif rk in ["n", "N"]:
                         log_info("You can navigate MEGA Cloud Storage Freely!")                        
-                        break
-                        
+                                               
                     else:
                         log_info("Enter y or n !!")
             else:                
