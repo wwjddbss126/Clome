@@ -218,9 +218,7 @@ def login_mega(data_list):
             browser.close()
 
 if __name__ == '__main__':
-    # file_path = str(input("Input Memory Image Path: "))
-    file_path_mega = r"D:\\IoTF\\ASS03\\mega-web-2.raw"
-    file_path_mybox = r"D:\\IoTF\\ASS03\\mybox-web-sample.raw"
+    file_path = str(input("Input Memory Image Path: "))
     
     log_info("#1: Mega Cloud")
     log_info("#2: Naver MYBOX")
@@ -233,7 +231,7 @@ if __name__ == '__main__':
     if num == 1:
         log_info("[*] Find significant values using findall() in MEGA Cloud...") 
         start = time.time()        
-        result = find_findall(file_path_mega, patterns_mega)
+        result = find_findall(file_path, patterns_mega)
         
         log_debug(f"Elapsed time : {time.time() - start}")
         login_mega(print_result(result))
@@ -241,7 +239,7 @@ if __name__ == '__main__':
     if num == 2:
         log_info("[*] Find significant values using findall() in Naver MYBOX...")
         start = time.time()                    
-        result = find_findall(file_path_mybox, patterns_mybox)
+        result = find_findall(file_path, patterns_mybox)
         
         log_debug(f"Elapsed time : {time.time() - start}")
         login_mybox(print_result(result))
