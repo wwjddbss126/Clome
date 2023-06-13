@@ -42,9 +42,7 @@ patterns_mybox = [
  
 patterns_terabox = [  
 
-    r"(?:NID_SES.{9}|{\"name\":\"NID_SES\",\"value\":\"|NID_SES=)([A-Za-z0-9+/=]{500,})(?:\"|;|)",
-    r"(?:NID_AUT.{9}|{\"name\":\"NID_AUT\",\"value\":\"|NID_AUT=)([A-Za-z0-9+/]{64})(?:\"|;|)"
-    
+    r"(?<=ndus=)[A-Za-z0-9]+"    
 ]
  
 def log_info(message):
@@ -104,10 +102,13 @@ def print_result(result):
     v_c = product(*(value for key, value in result.items()))
     for c in v_c:
         combination.append(c)
+    
+    if len(result) == 1:  # If the result has only one key
+        combination = list(combination[0])  # Convert the tuple to a list
             
     print("\n")
     log_info("================  Search Result Ends  ================\n")
-    log_debug("Starting Playwright to find valid keys...")
+    log_debug("Start finding valid keys...")
         
     return combination    
     
@@ -162,8 +163,8 @@ def login_terabox(data_list):
                     break               
                 
         else:
-            log_info(f"Login Faild {response.status_code :(}")
-
+            print(i)
+            log_info("Login Faild {} :(".format(response.status_code))
 
 def display_terabox():
     log_info("[*] Enter #. to explore TeraBox...")
@@ -326,10 +327,11 @@ if __name__ == '__main__':
     if num == 3:
         log_info("[*] Find significant values using findall() in TeraBox...")
         start = time.time()                    
-        # result = find_findall(file_path, patterns_terabox)
+        result = find_findall(file_path, patterns_terabox)
         
         log_debug(f"Elapsed time : {time.time() - start}")
-        # login_terabox(print_result(result))
-        login_terabox(['Yd2TqC7teHuioz9D-uAqq0Md6c9pliJgzmpBDCOt'])
+        
+        login_terabox(print_result(result))
+        # login_terabox(['Yd2TqC7teHuioz9D-uAqq0Md6c9pliJgzmpBDCOt'])
         
     
