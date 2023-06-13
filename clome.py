@@ -7,12 +7,20 @@ from itertools import product
 from playwright.sync_api import sync_playwright
 
 urls = {
+
     "megalogin": "https://mega.nz/login",
     "navermain": "https://naver.com",
     "keybackup": "https://mega.nz/keybackup",
     "myboxmain": "https://photo.mybox.naver.com/",
     "naversecurity": "https://nid.naver.com/user2/help/myInfoV2?m=viewSecurity",
-    "naverapi": "https://github.com/wwjddbss126/NaverMYBOX.git"
+    "naverapi": "https://github.com/wwjddbss126/NaverMYBOX.git"    
+}
+
+tera_urls = {
+
+    "user": "https://www.terabox.com/passport/get_info",
+    "account": "https://www.terabox.com/rest/2.0/membership/proxy/user?clientfrom=h5&method=query&membership_version=1.0",
+    "filelist": "https://www.terabox.com/api/list"
 }
 
 patterns_mega = [  
@@ -28,7 +36,14 @@ patterns_mybox = [
     r"(?:NID_AUT.{9}|{\"name\":\"NID_AUT\",\"value\":\"|NID_AUT=)([A-Za-z0-9+/]{64})(?:\"|;|)"
     
 ]
+ 
+patterns_terabox = [  
+
+    r"(?:NID_SES.{9}|{\"name\":\"NID_SES\",\"value\":\"|NID_SES=)([A-Za-z0-9+/=]{500,})(?:\"|;|)",
+    r"(?:NID_AUT.{9}|{\"name\":\"NID_AUT\",\"value\":\"|NID_AUT=)([A-Za-z0-9+/]{64})(?:\"|;|)"
     
+]
+ 
 def log_info(message):
     print(Fore.LIGHTBLUE_EX + f"[INFO] {message}" + Style.RESET_ALL)
 
@@ -92,6 +107,9 @@ def print_result(result):
     log_debug("Starting Playwright to find valid keys...")
         
     return combination
+
+def login_terabox(data_list):
+    # ##
 
 def login_mybox(data_list):
     with sync_playwright() as playwright:
@@ -220,6 +238,7 @@ if __name__ == '__main__':
     
     log_info("#1: Mega Cloud")
     log_info("#2: Naver MYBOX")
+    log_info("#3: TeraBox")
     num = int(input())
     
     if num == 0:
@@ -241,5 +260,13 @@ if __name__ == '__main__':
         
         log_debug(f"Elapsed time : {time.time() - start}")
         login_mybox(print_result(result))
+    
+    if num == 3:
+        log_info("[*] Find significant values using findall() in TeraBox...")
+        start = time.time()                    
+        # result = find_findall(file_path, patterns_terabox)
+        
+        log_debug(f"Elapsed time : {time.time() - start}")
+        # login_terabox(print_result(result))
         
     
