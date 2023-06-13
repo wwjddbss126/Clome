@@ -1,10 +1,13 @@
 import re
 import time
 import json
+import requests
+import unicodedata
 
 from colorama import Fore, Style
 from itertools import product
 from playwright.sync_api import sync_playwright
+from tabulate import tabulate
 
 urls = {
 
@@ -106,11 +109,70 @@ def print_result(result):
     log_info("================  Search Result Ends  ================\n")
     log_debug("Starting Playwright to find valid keys...")
         
-    return combination
+    return combination    
+    
 
 def login_terabox(data_list):
-    # ##
+    for i in data_list:
+        response = requests.get(tera_urls["user"], cookies={'ndus': i})
+        
+        if response.status_code == 200:
+            resp = json.loads(response.content)
+            log_info("Login Succeed!")
+            log_info("User Name: {}".format(resp['data']['display_name']))
+            log_info("Profile Image URL: {}".format(resp['data']['head_url']))
+            print("\n")
+            
+            while(1):
+                n = display_terabox()
+                if n == 1: # 계정 멤버십 정보
+                    url, key = tera_urls["account"], "data"
+                    resp = json.loads(requests.get(url, cookies={'ndus': i}).content)
+                    
+                    for key, value in resp.items():
+                        if isinstance(value, dict):
+                            print(key)
+                            for sub_key, sub_value in value.items():
+                                print(f"{sub_key}: {sub_value}")
+                            print()
+                        else:
+                            print(f"{key}: {value}")           
+                    
+                elif n == 2: # 파일 메타데이터
+                    url, key = tera_urls["filelist"], "list"
+                    headers = ['category', 'isdir', 'md5', 'oper_id', 'fs_id', 'server_atime', 'server_ctime', 'local_mtime', 'size', 'share', 'pl', 'path', 'local_ctime', 'server_filename', 'server_mtime', 'owner_id']
+                    
+                    resp = json.loads(requests.get(url, cookies={'ndus': i}).content)                       
+                    table_data = []  
 
+                    for item in resp[key]:
+                        row = []
+                        for key in headers:
+                            value = item.get(key)
+                            if isinstance(value, str) and any(ord(c) > 127 for c in value):
+                                value = unicodedata.normalize('NFC', value)
+                            row.append(value)
+                        table_data.append(row)
+                        
+                    table = tabulate(table_data, headers=headers, tablefmt='grid')
+                    print(table)
+                
+                else:
+                    log_debug("You entered wrong #.")
+                    break               
+                
+        else:
+            log_info(f"Login Faild {response.status_code :(}")
+
+
+def display_terabox():
+    log_info("[*] Enter #. to explore TeraBox...")
+    log_info("#1: Show Membership Information")
+    log_info("#2: Show File list")
+    print("\n")
+    return int(input("Enter #."))
+    
+    
 def login_mybox(data_list):
     with sync_playwright() as playwright:
         browser_type = playwright.chromium
@@ -268,5 +330,6 @@ if __name__ == '__main__':
         
         log_debug(f"Elapsed time : {time.time() - start}")
         # login_terabox(print_result(result))
+        login_terabox(['Yd2TqC7teHuioz9D-uAqq0Md6c9pliJgzmpBDCOt'])
         
     
