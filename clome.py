@@ -3,6 +3,7 @@ import time
 import json
 import requests
 import unicodedata
+import time
 
 from colorama import Fore, Style
 from itertools import product
@@ -23,7 +24,10 @@ tera_urls = {
 
     "user": "https://www.terabox.com/passport/get_info",
     "account": "https://www.terabox.com/rest/2.0/membership/proxy/user?clientfrom=h5&method=query&membership_version=1.0",
-    "filelist": "https://www.terabox.com/api/list"
+    "list": "https://www.terabox.com/api/list",
+    "thumbnail": "https://www.terabox.com/api/list?app_id=250528&web=1&channel=dubox&clienttype=5&jsToken=66D9D25B43BAD5980B35B9D195A431B533884FDD859199C8D8A31171BB36CC878019D1A1AC8BD95CF7F3B9F12330EFA4C413C8FB19847AE063C51A292ED6A82C&order=time&desc=1&dir=%2F&num=100&page=1&showempty=0",
+    "data": "https://www.terabox.com/api/download?app_id=250528&web=1&channel=dubox&clienttype=5&jsToken=66D9D25B43BAD5980B35B9D195A431B533884FDD859199C8D8A31171BB36CC878019D1A1AC8BD95CF7F3B9F12330EFA4C413C8FB19847AE063C51A292ED6A82C"
+
 }
 
 patterns_mega = [  
@@ -42,7 +46,7 @@ patterns_mybox = [
  
 patterns_terabox = [  
 
-    r"(?<=ndus=)[A-Za-z0-9]+"    
+    r"ndus=([a-zA-Z0-9_]{40});"
 ]
  
 def log_info(message):
@@ -120,6 +124,7 @@ def login_terabox(data_list):
         if response.status_code == 200:
             resp = json.loads(response.content)
             log_info("Login Succeed!")
+            print(resp)
             log_info("User Name: {}".format(resp['data']['display_name']))
             log_info("Profile Image URL: {}".format(resp['data']['head_url']))
             print("\n")
@@ -140,10 +145,10 @@ def login_terabox(data_list):
                             print(f"{key}: {value}")           
                     
                 elif n == 2: # 파일 메타데이터
-                    url, key = tera_urls["filelist"], "list"
+                    url, key = tera_urls["list"], "list"
                     headers = ['category', 'isdir', 'md5', 'oper_id', 'fs_id', 'server_atime', 'server_ctime', 'local_mtime', 'size', 'share', 'pl', 'path', 'local_ctime', 'server_filename', 'server_mtime', 'owner_id']
                     
-                    resp = json.loads(requests.get(url, cookies={'ndus': i}).content)                       
+                    resp = json.loads(requests.get(url, cookies={'ndus': i}).content)
                     table_data = []  
 
                     for item in resp[key]:
@@ -157,7 +162,47 @@ def login_terabox(data_list):
                         
                     table = tabulate(table_data, headers=headers, tablefmt='grid')
                     print(table)
-                
+
+                elif n == 3: # 썸네일 URL
+                    url, key = tera_urls["thumbnail"], "list"
+
+                    resp = json.loads(requests.get(url, cookies={'ndus': i}).content)
+
+                    for item in resp[key]:
+                        res = []
+                        res.append(item['isdir'])
+                        res.append(item['md5'])
+
+                        value = item['path']
+                        if isinstance(value, str) and any(ord(c) > 127 for c in value):
+                            value = unicodedata.normalize('NFC', value)
+                        res.append(value)
+
+                        res.append(item['size'])
+                        try:
+                            res.append(item['thumbs'])
+                        except:
+                            res.append("null")
+
+                        print('-' * 80)
+                        print('isdir:', res[0])
+                        print('md5:', res[1])
+                        print('path:', res[2])
+                        print('size:', res[3])
+                        print('thumbs:', res[4])
+
+                elif n == 4: # 파일 데이터
+                    url, key = tera_urls["data"], "dlink"
+
+                    dp_id = "&dp-logid=17867300236566300015"
+                    fs_id = "&fidlist=%5B" + "767620573048020" + "%5D"
+                    ts = "&timestamp=" + str(round(time.time()))
+                    bds = "&bdstoken=" + "9bb0ee320bb560ed7685046a3cfca8d2"
+
+                    url = url + dp_id + fs_id + "&type=dlink&vip=2&sign=dwN8Qn3b7PID7pY9j5zy%2FyfZ7mytKZaOaFcqNctgtBMaByNcoA7iNA%3D%3D" + ts + bds
+                    resp = json.loads(requests.get(url, cookies={'ndus': i}).content)
+                    print(url)
+                    print(resp)
                 else:
                     log_debug("You entered wrong #.")
                     break               
@@ -170,6 +215,7 @@ def display_terabox():
     log_info("[*] Enter #. to explore TeraBox...")
     log_info("#1: Show Membership Information")
     log_info("#2: Show File list")
+    log_info("#3: Show Thumbnail Information")
     print("\n")
     return int(input("Enter #."))
     
