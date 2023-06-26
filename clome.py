@@ -65,6 +65,156 @@ def log_error(message):
     print(Fore.RED + f"[ERROR] {message}" + Style.RESET_ALL)
 
 
+
+def build_kmp_table(pattern):
+    table = [0] * (len(pattern) + 1)
+    i = 0
+    j = -1
+    table[i] = j
+
+    while i < len(pattern):
+        while j >= 0 and pattern[i] != pattern[j]:
+            j = table[j]
+        i += 1
+        j += 1
+        table[i] = j
+
+    return table
+
+def kmp_search(text, pattern, table):
+    m = len(pattern)
+    n = len(text)
+    i = 0
+    j = 0
+    positions = []
+
+    while i < n:
+        while j >= 0 and text[i] != pattern[j]:
+            j = table[j]
+        i += 1
+        j += 1
+
+        if j == m:
+            positions.append(i - j)
+            j = table[j]
+
+    return positions
+
+def find_kmp(file_path, patterns):
+    matches = {pattern: [] for pattern in patterns}
+
+    with open(file_path, 'rb') as file:
+        chunk_size = 1024 * 1024 * 1024
+        offset = 0
+
+        while True:
+            file.seek(offset)
+            chunk = file.read(chunk_size).decode(errors='ignore')
+
+            if not chunk:
+                break
+
+            for pattern in patterns:
+                table = build_kmp_table(pattern)
+                pattern_matches = kmp_search(chunk, pattern, table)
+
+                for position in pattern_matches:
+                    match = chunk[position:position + len(pattern)]
+                    if match not in matches[pattern]:
+                        matches[pattern].append(match)
+                        log_debug(f"Found match for {pattern}: {match}")
+
+            offset += len(chunk)
+            log_debug(f"Processed: {offset} bytes")
+
+    return matches
+
+def build_bad_character_table(pattern):
+    table = {}
+
+    for i in range(len(pattern) - 1):
+        table[pattern[i]] = i
+
+    return table
+
+def build_good_suffix_table(pattern):
+    m = len(pattern)
+    suffixes = [0] * (m + 1)
+    borders = [0] * (m + 1)
+
+    for i in range(m - 1, -1, -1):
+        j = m - 1 - i
+        if pattern[i] not in suffixes[j:]:
+            suffixes[j] = m - i
+        borders[j] = m - i
+
+    for i in range(1, m):
+        j = m - 1 - borders[i]
+        if suffixes[j] > i - borders[i]:
+            suffixes[j] = i - borders[i]
+
+    return suffixes
+
+def boyer_moore_search(text, pattern, bad_character_table, good_suffix_table):
+    m = len(pattern)
+    n = len(text)
+    i = m - 1
+    j = m - 1
+    positions = []
+
+    while i < n:
+        if text[i] == pattern[j]:
+            if j == 0:
+                positions.append(i)
+                i += m - min(j + 1, good_suffix_table[0])
+                j = m - 1
+            else:
+                i -= 1
+                j -= 1
+        else:
+            bad_character_shift = bad_character_table.get(text[i], m)
+            good_suffix_shift = good_suffix_table[j]
+            shift = max(bad_character_shift, good_suffix_shift)
+            i += shift
+            j = m - 1
+
+    return positions
+
+def find_boyer_moore(file_path, patterns):
+    matches = {pattern: [] for pattern in patterns}
+
+    with open(file_path, 'rb') as file:
+        chunk_size = 1024 * 1024 * 1024
+        offset = 0
+
+        while True:
+            file.seek(offset)
+            chunk = file.read(chunk_size).decode(errors='ignore')
+
+            if not chunk:
+                break
+
+            for pattern in patterns:
+                bad_character_table = build_bad_character_table(pattern)
+                good_suffix_table = build_good_suffix_table(pattern)
+                pattern_matches = boyer_moore_search(chunk, pattern, bad_character_table, good_suffix_table)
+
+                for position in pattern_matches:
+                    match = chunk[position:position + len(pattern)]
+                    if match not in matches[pattern]:
+                        matches[pattern].append(match)
+                        log_debug(f"Found match for {pattern}: {match}")
+
+            offset += len(chunk)
+            log_debug(f"Processed: {offset} bytes")
+
+    return matches
+
+
+
+
+
+
 def find_findall(file_path, patterns):
     matches = {pattern: [] for pattern in patterns}
 
@@ -491,6 +641,8 @@ if __name__ == '__main__':
         log_info("#1: Mega Cloud")
         log_info("#2: Naver MYBOX")
         log_info("#3: TeraBox")
+        print("#4: String search algorithm")
+        
         num = int(input())
         
         if num == 0:
@@ -516,7 +668,22 @@ if __name__ == '__main__':
         if num == 3:
             log_info("[*] Find significant values using findall() in TeraBox...")
             start = time.time()                    
-            result = find_findall(file_path, patterns_terabox)
-            
-            log_debug(f"Elapsed time : {time.time() - start}")            
+            result = find_findall(file_path, patterns_terabox)         
+
+            log_debug(f"Elapsed time : {time.time() - start}") 
             login_terabox(print_result(result))
+        
+        if num == 4: # 문자열 검색 알고리즘 비교
+            start = time.time()                    
+            result = find_findall(file_path, patterns_terabox)            
+            log_debug(f"findall Elapsed time : {time.time() - start}")    
+
+            start = time.time()                    
+            result = find_kmp(file_path, patterns_terabox)            
+            log_debug(f"kmp Elapsed time : {time.time() - start}")
+
+            start = time.time()                    
+            result = find_boyer_moore(file_path, patterns_terabox)            
+            log_debug(f"boyer_moore Elapsed time : {time.time() - start}")
+
+            exit(-1)
