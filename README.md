@@ -23,6 +23,7 @@ python clome.py
 ```
 
 If it does not run properly after installation and the following screen appears, enter the following command and run it again.
+
 ![image](https://github.com/jpark-classroom/aiotforensics-wwjddbss126/assets/49504937/35f3ea22-353c-4927-afde-5a42857ca28a)
 ```
 playwright install
